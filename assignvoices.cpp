@@ -6,6 +6,13 @@ std::vector<Beat> beats;
 bool detectHits = true;
 bool hitDetected = false;
 int shiftAmount = 10; //Test by trial and error
+
+//Find threshold for detection
+// Calculate standard deviation, mean is 0
+float sigm = 0;
+for (int sn = 0; sn<rs; ++sn) {
+   sigm += fabs(sampleData[sn])/sqrt(rs-1);
+}
   
 //Find hits. push_back to beats.
 if(detectHits) {
