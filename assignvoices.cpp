@@ -1,3 +1,9 @@
+/*Detects the largest beats in the buffer sampleData
+  Adjustable parameters is:
+  - stds: level of threshold
+  - shiftAmount: Adust to get correct startpoints
+*/
+
 struct Beat {
    int in_point;
    float weight;
@@ -9,10 +15,15 @@ int shiftAmount = 10; //Test by trial and error
 
 //Find threshold for detection
 // Calculate standard deviation, mean is 0
+float stds = 3.5; //Threshold is this number of standard deviations.
 float sigm = 0;
 for (int sn = 0; sn<rs; ++sn) {
    sigm += fabs(sampleData[sn])/sqrt(rs-1);
 }
+float threshold = sigm*stds;
+
+TBeatDetector BeatDetector;
+BeatDetector.setThreshold(threshold);
   
 //Find hits. push_back to beats.
 if(detectHits) {
