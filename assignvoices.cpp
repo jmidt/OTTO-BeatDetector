@@ -1,33 +1,45 @@
-TBeatDetector BeatDetector;
+struct Beat {
+   int in_point;
+   float weight;
+};
+std::vector<Beat> beats;
 bool detectHits = true;
 bool hitDetected = false;
 int shiftAmount = 10; //Test by trial and error
-int vdx = 0; //Number of assigned voices.
-auto &&vd = props.voiceData[vdx];
+  
+//Find hits. push_back to beats.
 if(detectHits) {
   for (int sn = 0; sn<rs; ++sn) { //Goes through all samples in the buffer
     BeatDetector.AudioProcess(sampleData[sn]);
     hitDetected = BeatDetector.BeatPulse;
     if (hitDetected) {
-      if (vdx > 0 && vd.out >= rs) { //Not the first hit
-        vd.out = sn - shiftAmount; // Go back so we avoid beginning of next hit   
-        auto &&vd = props.voiceData[vdx]; //Next voice
-      }
-      if (vd.in < 0) {
-        vd.in = std::max(sn - shiftAmount, 0); // Go back a little, so we get entire hit, but only to beginning
-        vdx++;
-      }
-      hitDetected = false;
+      Beat cur_beat = {
+        std::max(sn-shiftAmount,0), //Go back a little. 
+        BeatDetector.getWeight()}; //Get the weight of the current hit somehow.
+      beats.push_back(cur_beat);
     }
   } 
-  if (vd.in >= 0) { //If start has been set, set the end at the end of the sample.
-    vd.out = rs-1;
 }
-//Set remaining voices
-for (int i = vdx; i < nVoices; ++i) {
-      auto &&vd = props.voiceData[i];
-      if (vd.in < 0 || vd.out >= rs) {
-        vd.in = i * (rs / nVoices);
-        vd.out = (i + 1) * rs / nVoices;
-      }
+//Sort to get the nVoices (24?) largest hits.
+std::sort(std::begin(beats), std::end(beats),  
+  [] (Beat& l, Beat& r) {
+    return l.weight > r.weight;
+  });
+int n_found = std::min(nVoices, beats.size());
+std::sort(std::begin(beats), std::begin(beats) + n_found,
+  [] (Beat& l, Beat& r) {
+    return l.in_point < r.in_point;
+  });
+for (int i = 0; i < n_found; i++) {
+  voice[i].in = beats[i].in_point;
+  if (i < n_found-1)
+    voice[i].out = beats[i+1].in_point; //Set end-point to beginning of next big hit.
+  else
+    voice[i].out = rs-1; //Set last voice to end of sample
+}
+//Set remaining voices to default
+int n_default = nVoices - n_found;
+int default_length = sampleBuffer.size() / n_default;
+for (int i = 0; i < n_default; i++) {
+  voice[n_found + i].in = i * default_length;
 }
