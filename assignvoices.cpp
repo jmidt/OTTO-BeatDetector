@@ -5,7 +5,7 @@ int shiftAmount = 10; //Test by trial and error
 int vdx = 0; //Number of assigned voices.
 auto &&vd = props.voiceData[vdx];
 if(detectHits) {
-  for (int sn = 0; sn<rs; ++sn) {
+  for (int sn = 0; sn<rs; ++sn) { //Goes through all samples in the buffer
     BeatDetector.AudioProcess(sampleData[sn]);
     hitDetected = BeatDetector.BeatPulse;
     if (hitDetected) {
