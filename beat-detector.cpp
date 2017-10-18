@@ -11,6 +11,7 @@ private:
   float PeakEnv;            // Peak enveloppe follower
   bool BeatTrigger;         // Schmitt trigger output
   bool PrevBeatPulse;       // Rising edge memory
+  float threshold;          // Peak threshold
 public:
   bool BeatPulse;           // Beat detector output
 
@@ -18,6 +19,7 @@ public:
   ~TBeatDetector();
   virtual void setSampleRate(float SampleRate);
   virtual void AudioProcess (float input);
+  virtual void setThreshold(float threshold_in);
 };
 #endif
 
@@ -39,6 +41,7 @@ TBeatDetector::TBeatDetector()
   BeatTrigger=false;
   PrevBeatPulse=false;
   setSampleRate(44100);
+  threshold=0.3;
 }
 
 TBeatDetector::~TBeatDetector()
@@ -51,6 +54,10 @@ void TBeatDetector::setSampleRate (float sampleRate)
 {
   KBeatFilter=1.0/(sampleRate*T_FILTER);
   BeatRelease=(float)exp(-1.0f/(sampleRate*BEAT_RTIME));
+}
+
+void TBeatDetector::setThreshold(float threshold_in) {
+ threshold = threshold_in; 
 }
 
 void TBeatDetector::AudioProcess (float input)
@@ -76,11 +83,11 @@ void TBeatDetector::AudioProcess (float input)
   // Step 3 : Schmitt trigger
   if (!BeatTrigger)
   {
-    if (PeakEnv>0.3) BeatTrigger=true;
+    if (PeakEnv>threshold) BeatTrigger=true;
   }
   else
   {
-    if (PeakEnv<0.15) BeatTrigger=false;
+    if (PeakEnv<threshold2/2) BeatTrigger=false;
   }
 
   // Step 4 : rising edge detector
